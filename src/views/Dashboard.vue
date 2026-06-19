@@ -1,285 +1,167 @@
 <template>
-  <div class="dashboard-container">
-    <!-- 顶部导航 -->
-    <header class="dashboard-header">
-      <div class="header-left">
-        <img src="/favicon.svg" alt="Logo" class="header-logo" />
-        <h1 class="header-title">后台订单管理系统</h1>
-      </div>
-      <div class="header-right">
-        <el-dropdown trigger="click" @command="handleCommand">
-          <div class="user-info">
-            <el-avatar :size="36" :icon="UserFilled" />
-            <span class="user-name">{{ userStore.userInfo?.nickname || userStore.userInfo?.username }}</span>
-            <el-icon><ArrowDown /></el-icon>
-          </div>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="profile">
-                <el-icon><User /></el-icon>
-                个人中心
-              </el-dropdown-item>
-              <el-dropdown-item divided command="logout">
-                <el-icon><SwitchButton /></el-icon>
-                退出登录
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-      </div>
-    </header>
+  <div class="dashboard-page">
+    <div class="welcome-section">
+      <h2 class="welcome-title">
+        <el-icon><Sunny /></el-icon>
+        欢迎回来，{{ displayName }}！
+      </h2>
+      <p class="welcome-desc">今天是 {{ today }}，祝您工作愉快</p>
+    </div>
 
-    <!-- 主内容区 -->
-    <main class="dashboard-main">
-      <div class="welcome-section">
-        <h2 class="welcome-title">
-          <el-icon><Sunny /></el-icon>
-          欢迎回来，{{ userStore.userInfo?.nickname || userStore.userInfo?.username }}！
-        </h2>
-        <p class="welcome-desc">您已成功登录后台订单管理系统</p>
-      </div>
-
-      <!-- 统计卡片 -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
-            <el-icon><Document /></el-icon>
-          </div>
-          <div class="stat-content">
-            <div class="stat-value">{{ orderStore.orders.length }}</div>
-            <div class="stat-label">总订单数</div>
-          </div>
+    <div class="stats-grid">
+      <div class="stat-card primary">
+        <div class="stat-icon">
+          <el-icon><Document /></el-icon>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb, #f5576c);">
-            <el-icon><Clock /></el-icon>
-          </div>
-          <div class="stat-content">
-            <div class="stat-value">{{ orderStore.orders.filter(o => o.status === '待付款').length }}</div>
-            <div class="stat-label">待付款订单</div>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">
-            <el-icon><CircleCheck /></el-icon>
-          </div>
-          <div class="stat-content">
-            <div class="stat-value">{{ orderStore.orders.filter(o => o.status === '已完成').length }}</div>
-            <div class="stat-label">已完成订单</div>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b, #38f9d7);">
-            <el-icon><UserFilled /></el-icon>
-          </div>
-          <div class="stat-content">
-            <div class="stat-value">{{ new Set(orderStore.orders.map(o => o.customer)).size }}</div>
-            <div class="stat-label">客户数量</div>
-          </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ orderStore.totalOrders }}</div>
+          <div class="stat-label">总订单数</div>
         </div>
       </div>
-
-      <!-- 快捷操作 / 搜索 -->
-      <div class="quick-actions">
-        <h3 class="section-title">订单管理</h3>
-        <div class="actions-header">
-           <div class="actions-left">
-            <el-button type="primary" size="large" @click="showAddOrderDialog = true">
-                <el-icon><Plus /></el-icon>
-                新建订单
-            </el-button>
-           </div>
-           <div class="actions-right search-area">
-             <el-input
-                v-model="searchForm.customer"
-                placeholder="请输入客户名"
-                class="search-input"
-                prefix-icon="User"
-                clearable
-                @keyup.enter="handleSearch"
-              />
-              <el-input
-                v-model="searchForm.orderNo"
-                placeholder="请输入订单号"
-                class="search-input"
-                prefix-icon="Document"
-                clearable
-                @keyup.enter="handleSearch"
-              />
-              <el-button type="primary" @click="handleSearch">
-                <el-icon><Search /></el-icon>
-                查询
-              </el-button>
-              <el-button @click="handleReset">
-                重置
-              </el-button>
-           </div>
+      <div class="stat-card warning">
+        <div class="stat-icon">
+          <el-icon><Clock /></el-icon>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ orderStore.pendingPayment }}</div>
+          <div class="stat-label">待付款订单</div>
         </div>
       </div>
+      <div class="stat-card success">
+        <div class="stat-icon">
+          <el-icon><CircleCheck /></el-icon>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ orderStore.completedOrders }}</div>
+          <div class="stat-label">已完成订单</div>
+        </div>
+      </div>
+      <div class="stat-card info">
+        <div class="stat-icon">
+          <el-icon><UserFilled /></el-icon>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ orderStore.customerCount }}</div>
+          <div class="stat-label">客户数量</div>
+        </div>
+      </div>
+    </div>
 
-      <!-- 最近订单 -->
-      <div class="recent-orders">
-        <h3 class="section-title">订单列表</h3>
-        <el-table :data="filteredOrders" style="width: 100%" stripe>
-          <el-table-column prop="orderNo" label="订单号" width="180" />
-          <el-table-column prop="customer" label="客户名称" />
-          <el-table-column prop="amount" label="金额">
+    <div class="content-grid">
+      <div class="recent-orders-card">
+        <div class="card-header">
+          <h3 class="card-title">最近订单</h3>
+          <router-link to="/orders" class="view-all-link">
+            查看全部
+            <el-icon><ArrowRight /></el-icon>
+          </router-link>
+        </div>
+        <el-table :data="recentOrders" style="width: 100%" stripe>
+          <el-table-column prop="orderNo" label="订单号" min-width="150" />
+          <el-table-column prop="customer" label="客户" min-width="100" />
+          <el-table-column prop="amount" label="金额" min-width="100">
             <template #default="{ row }">
-              ¥{{ row.amount.toFixed(2) }}
+              <span class="amount">¥{{ Number(row.amount).toFixed(2) }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="status" label="状态" width="100">
+          <el-table-column prop="status" label="状态" width="90">
             <template #default="{ row }">
-              <el-tag :type="statusType(row.status)">
+              <el-tag :type="statusType(row.status)" size="small">
                 {{ row.status }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="createTime" label="创建时间" width="180" />
-          <el-table-column label="操作" width="150" fixed="right">
-            <template #default="{ row }">
-              <el-button link type="primary" size="small" @click="openEditDialog(row)">编辑</el-button>
-              <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
-            </template>
-          </el-table-column>
         </el-table>
       </div>
-    </main>
 
-    <!-- 新建订单弹窗 -->
-    <el-dialog v-model="showAddOrderDialog" title="新建订单" width="500px">
-      <el-form :model="newOrderForm" label-width="100px">
-        <el-form-item label="订单号">
-          <el-input v-model="newOrderForm.orderNo" placeholder="系统自动生成" disabled />
-        </el-form-item>
-        <el-form-item label="客户名称">
-           <el-input v-model="newOrderForm.customer" placeholder="请输入客户名称" />
-        </el-form-item>
-        <el-form-item label="订单金额">
-           <el-input-number v-model="newOrderForm.amount" :min="0" :precision="2" />
-        </el-form-item>
-        <el-form-item label="订单状态">
-           <el-select v-model="newOrderForm.status">
-             <el-option label="已完成" value="已完成" />
-             <el-option label="处理中" value="处理中" />
-             <el-option label="待付款" value="待付款" />
-             <el-option label="已取消" value="已取消" />
-           </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="showAddOrderDialog = false">取消</el-button>
-          <el-button type="primary" @click="confirmAddOrder">确定</el-button>
-        </span>
-      </template>
-    </el-dialog>
+      <div class="quick-actions-card">
+        <h3 class="card-title">快捷操作</h3>
+        <div class="action-buttons">
+          <router-link to="/orders" class="action-btn">
+            <div class="action-icon">
+              <el-icon><Plus /></el-icon>
+            </div>
+            <span>新建订单</span>
+          </router-link>
+          <router-link to="/orders" class="action-btn">
+            <div class="action-icon">
+              <el-icon><List /></el-icon>
+            </div>
+            <span>订单列表</span>
+          </router-link>
+        </div>
 
-    <!-- 编辑订单弹窗 -->
-    <el-dialog v-model="showEditOrderDialog" title="编辑订单" width="500px">
-      <el-form :model="editOrderForm" label-width="100px">
-        <el-form-item label="订单号">
-          <el-input v-model="editOrderForm.orderNo" disabled />
-        </el-form-item>
-        <el-form-item label="客户名称">
-           <el-input v-model="editOrderForm.customer" />
-        </el-form-item>
-        <el-form-item label="订单金额">
-           <el-input-number v-model="editOrderForm.amount" :min="0" :precision="2" />
-        </el-form-item>
-        <el-form-item label="订单状态">
-           <el-select v-model="editOrderForm.status">
-             <el-option label="已完成" value="已完成" />
-             <el-option label="处理中" value="处理中" />
-             <el-option label="待付款" value="待付款" />
-             <el-option label="已取消" value="已取消" />
-           </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="showEditOrderDialog = false">取消</el-button>
-          <el-button type="primary" @click="confirmEditOrder">保存</el-button>
-        </span>
-      </template>
-    </el-dialog>
-
-    <!-- 个人中心弹窗 -->
-    <el-dialog v-model="showProfileDialog" title="个人中心" width="400px">
-      <div class="profile-content">
-         <div class="profile-header">
-            <el-avatar :size="80" :icon="UserFilled" />
-            <h3>{{ userStore.userInfo?.nickname || userStore.userInfo?.username }}</h3>
-            <p>{{ userStore.userInfo?.role === 'admin' ? '系统管理员' : '普通用户' }}</p>
-         </div>
-         <el-divider />
-         <el-form label-position="left" label-width="80px">
-            <el-form-item label="用户名">
-               <span>{{ userStore.userInfo?.username }}</span>
-            </el-form-item>
-            <el-form-item label="邮箱">
-               <span>{{ userStore.userInfo?.email }}</span>
-            </el-form-item>
-            <el-form-item label="注册时间">
-               <span>{{ userStore.userInfo?.createdAt }}</span>
-            </el-form-item>
-         </el-form>
+        <div class="status-distribution">
+          <h4>订单状态分布</h4>
+          <div class="status-bar">
+            <div
+              v-for="(item, key) in statusDistribution"
+              :key="key"
+              class="status-segment"
+              :class="key"
+              :style="{ width: item.percent + '%' }"
+              :title="`${key}: ${item.count}单`"
+            ></div>
+          </div>
+          <div class="status-legend">
+            <div v-for="(item, key) in statusDistribution" :key="key" class="legend-item">
+              <span class="legend-dot" :class="key"></span>
+              <span>{{ key }} ({{ item.count }})</span>
+            </div>
+          </div>
+        </div>
       </div>
-    </el-dialog>
-
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, reactive, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { computed } from 'vue'
 import {
-  UserFilled,
-  ArrowDown,
-  User,
-  SwitchButton,
   Sunny,
   Document,
   Clock,
   CircleCheck,
+  UserFilled,
+  ArrowRight,
   Plus,
-  Search
+  List
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { useOrderStore } from '@/stores/order'
 
-const router = useRouter()
 const userStore = useUserStore()
 const orderStore = useOrderStore()
 
-// 搜索表单
-const searchForm = reactive({
-  customer: '',
-  orderNo: ''
+const displayName = computed(() => userStore.userInfo?.nickname || userStore.userInfo?.username)
+const today = new Date().toLocaleDateString('zh-CN', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  weekday: 'long'
 })
 
-const filteredOrders = ref(orderStore.orders)
+const recentOrders = computed(() => orderStore.orders.slice(0, 5))
 
-watch(() => orderStore.orders, (newVal) => {
-  handleSearch()
-}, { deep: true })
-
-const handleSearch = () => {
-  filteredOrders.value = orderStore.orders.filter(order => {
-    const matchCustomer = !searchForm.customer || order.customer.includes(searchForm.customer)
-    const matchOrderNo = !searchForm.orderNo || order.orderNo.toLowerCase().includes(searchForm.orderNo.toLowerCase())
-    return matchCustomer && matchOrderNo
+const statusDistribution = computed(() => {
+  const distribution = {
+    '待付款': { count: 0, percent: 0 },
+    '处理中': { count: 0, percent: 0 },
+    '已完成': { count: 0, percent: 0 },
+    '已取消': { count: 0, percent: 0 }
+  }
+  const total = orderStore.orders.length || 1
+  orderStore.orders.forEach(order => {
+    if (distribution[order.status]) {
+      distribution[order.status].count++
+    }
   })
-}
+  Object.keys(distribution).forEach(key => {
+    distribution[key].percent = Math.round((distribution[key].count / total) * 100)
+  })
+  return distribution
+})
 
-const handleReset = () => {
-    searchForm.customer = ''
-    searchForm.orderNo = ''
-    handleSearch()
-}
-
-// 状态标签类型
 const statusType = (status) => {
   const typeMap = {
     '已完成': 'success',
@@ -289,167 +171,10 @@ const statusType = (status) => {
   }
   return typeMap[status] || 'info'
 }
-
-// 个人中心
-const showProfileDialog = ref(false)
-
-// 新建订单
-const showAddOrderDialog = ref(false)
-const newOrderForm = reactive({
-    orderNo: '',
-    customer: '',
-    amount: 0,
-    status: '待付款'
-})
-// 每次打开新建弹窗自动生成订单号
-watch(showAddOrderDialog, (val) => {
-    if (val) {
-        newOrderForm.orderNo = `ORD-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`
-        newOrderForm.customer = ''
-        newOrderForm.amount = 0
-        newOrderForm.status = '待付款'
-    }
-})
-
-const confirmAddOrder = () => {
-    if (!newOrderForm.customer) {
-        ElMessage.warning('请输入客户名称')
-        return
-    }
-    const order = {
-        ...newOrderForm,
-        createTime: new Date().toLocaleString().replace(/\//g, '-')
-    }
-    orderStore.addOrder(order)
-    ElMessage.success('新建订单成功')
-    showAddOrderDialog.value = false
-}
-
-// 编辑订单
-const showEditOrderDialog = ref(false)
-const editOrderForm = reactive({
-    orderNo: '',
-    customer: '',
-    amount: 0,
-    status: ''
-})
-
-const openEditDialog = (row) => {
-    Object.assign(editOrderForm, row)
-    showEditOrderDialog.value = true
-}
-
-const confirmEditOrder = () => {
-    orderStore.updateOrder({ ...editOrderForm })
-    ElMessage.success('更新订单成功')
-    showEditOrderDialog.value = false
-}
-
-// 删除订单
-const handleDelete = async (row) => {
-    try {
-        await ElMessageBox.confirm('确定要删除该订单吗？', '警告', {
-            confirmButtonText: '确定',
-            cancelButtonText: '取消',
-            type: 'warning'
-        })
-        orderStore.deleteOrder(row.orderNo)
-        ElMessage.success('删除成功')
-    } catch {
-       // cancel
-    }
-}
-
-// 下拉菜单命令处理
-const handleCommand = async (command) => {
-  switch (command) {
-    case 'profile':
-      showProfileDialog.value = true
-      break
-
-    case 'logout':
-      try {
-        await ElMessageBox.confirm('确定要退出登录吗？', '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        })
-        userStore.logout()
-        ElMessage.success('已退出登录')
-        router.push('/login')
-      } catch {
-        // 用户取消
-      }
-      break
-  }
-}
 </script>
 
 <style scoped>
-.dashboard-container {
-  min-height: 100vh;
-  background: #f5f7fa;
-}
-
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 24px;
-  height: 64px;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.header-logo {
-  width: 36px;
-  height: 36px;
-}
-
-.header-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 8px;
-  transition: background 0.2s;
-}
-
-.user-info:hover {
-  background: #f5f7fa;
-}
-
-.user-name {
-  font-weight: 500;
-  color: #303133;
-}
-
-.dashboard-main {
-  padding: 24px;
+.dashboard-page {
   max-width: 1400px;
   margin: 0 auto;
 }
@@ -473,14 +198,15 @@ const handleCommand = async (command) => {
 }
 
 .welcome-desc {
-  color: #606266;
+  color: #909399;
+  font-size: 0.95rem;
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 20px;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .stat-card {
@@ -508,6 +234,23 @@ const handleCommand = async (command) => {
   justify-content: center;
   color: #fff;
   font-size: 24px;
+  flex-shrink: 0;
+}
+
+.stat-card.primary .stat-icon {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.stat-card.warning .stat-icon {
+  background: linear-gradient(135deg, #f093fb, #f5576c);
+}
+
+.stat-card.success .stat-icon {
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+}
+
+.stat-card.info .stat-icon {
+  background: linear-gradient(135deg, #43e97b, #38f9d7);
 }
 
 .stat-value {
@@ -520,75 +263,178 @@ const handleCommand = async (command) => {
 .stat-label {
   font-size: 0.9rem;
   color: #909399;
+  margin-top: 4px;
 }
 
-.section-title {
+.content-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+
+.recent-orders-card,
+.quick-actions-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.card-title {
   font-size: 1.1rem;
   font-weight: 600;
   color: #303133;
-  margin-bottom: 16px;
+  margin: 0;
 }
 
-.quick-actions {
-  margin-bottom: 32px;
+.view-all-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #409eff;
+  font-size: 0.9rem;
+  text-decoration: none;
 }
 
-.actions-grid {
+.view-all-link:hover {
+  color: #66b1ff;
+}
+
+.amount {
+  font-weight: 600;
+  color: #f56c6c;
+}
+
+.action-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 12px;
+  background: #f5f7fa;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #606266;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  background: #ecf5ff;
+  color: #409eff;
+}
+
+.action-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.status-distribution h4 {
+  font-size: 0.95rem;
+  color: #606266;
+  margin: 0 0 12px;
+}
+
+.status-bar {
+  display: flex;
+  height: 24px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f5f7fa;
+  margin-bottom: 12px;
+}
+
+.status-segment {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.status-segment.待付款 {
+  background: #909399;
+}
+
+.status-segment.处理中 {
+  background: #e6a23c;
+}
+
+.status-segment.已完成 {
+  background: #67c23a;
+}
+
+.status-segment.已取消 {
+  background: #f56c6c;
+}
+
+.status-legend {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
 }
-.actions-header {
+
+.legend-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-}
-.search-area {
-    display: flex;
-    gap: 10px;
-}
-.search-input {
-    width: 200px;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #606266;
 }
 
-@media (max-width: 900px) {
-  .actions-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-  .search-area {
-      flex-wrap: wrap;
-      width: 100%;
-  }
-  .search-input {
-      width: 100%;
-      max-width: none;
-  }
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
 }
 
-.recent-orders {
-  background: #fff;
-  padding: 24px;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+.legend-dot.待付款 {
+  background: #909399;
+}
+
+.legend-dot.处理中 {
+  background: #e6a23c;
+}
+
+.legend-dot.已完成 {
+  background: #67c23a;
+}
+
+.legend-dot.已取消 {
+  background: #f56c6c;
+}
+
+@media (max-width: 992px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
-  .dashboard-header {
-    padding: 0 16px;
-  }
-
-  .header-title {
-    display: none;
-  }
-
-  .dashboard-main {
-    padding: 16px;
+  .welcome-title {
+    font-size: 1.25rem;
   }
 
   .stats-grid {
     grid-template-columns: 1fr 1fr;
+    gap: 12px;
   }
 
   .stat-card {
@@ -604,13 +450,10 @@ const handleCommand = async (command) => {
   .stat-value {
     font-size: 1.5rem;
   }
-    .actions-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-  .search-input {
-      width: 100%;
+
+  .recent-orders-card,
+  .quick-actions-card {
+    padding: 16px;
   }
 }
 
@@ -619,23 +462,8 @@ const handleCommand = async (command) => {
     grid-template-columns: 1fr;
   }
 
-  .user-name {
-    display: none;
+  .action-buttons {
+    grid-template-columns: 1fr;
   }
-}
-
-.profile-content {
-    text-align: center;
-}
-.profile-header {
-    margin-bottom: 20px;
-}
-.profile-header h3 {
-    margin: 10px 0 5px;
-    font-size: 1.2rem;
-}
-.profile-header p {
-    color: #909399;
-    margin: 0;
 }
 </style>
