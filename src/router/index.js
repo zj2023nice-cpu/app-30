@@ -1,9 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { getStorage } from '@/utils/storage'
 
 const routes = [
   {
     path: '/',
-    redirect: '/login'
+    redirect: '/dashboard'
   },
   {
     path: '/login',
@@ -31,7 +32,7 @@ const routes = [
   },
   {
     path: '/:pathMatch(.*)*',
-    redirect: '/login'
+    redirect: '/dashboard'
   }
 ]
 
@@ -40,18 +41,20 @@ const router = createRouter({
   routes
 })
 
-// 路由守卫
 router.beforeEach((to, from, next) => {
-  // 更新页面标题
   document.title = to.meta.title || '后台订单管理系统'
   
-  // 检查是否需要登录
-  if (to.meta.requiresAuth) {
-    const token = localStorage.getItem('token')
-    if (!token) {
-      next({ name: 'Login', query: { redirect: to.fullPath } })
-      return
-    }
+  const token = getStorage('token')
+  const isLoggedIn = !!token
+  
+  if (to.meta.requiresAuth && !isLoggedIn) {
+    next({ name: 'Login', query: { redirect: to.fullPath } })
+    return
+  }
+  
+  if ((to.name === 'Login' || to.name === 'Register') && isLoggedIn) {
+    next({ name: 'Dashboard' })
+    return
   }
   
   next()
