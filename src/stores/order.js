@@ -28,22 +28,41 @@ export const useOrderStore = defineStore('order', () => {
         }
     }
 
-    const addOrder = (order) => {
-        orders.value.unshift(order)
+    const persist = () => {
         localStorage.setItem('orders', JSON.stringify(orders.value))
     }
 
+    const addOrder = (order) => {
+        orders.value.unshift(order)
+        persist()
+    }
+
+    // 业务规则：原状态或目标状态为「已完成」时，金额和客户均不可变更
+    // 防止用户通过先改状态再改金额/客户、或反向操作来绕过限制
     const updateOrder = (updatedOrder) => {
         const index = orders.value.findIndex(o => o.orderNo === updatedOrder.orderNo)
-        if (index !== -1) {
-            orders.value[index] = updatedOrder
-            localStorage.setItem('orders', JSON.stringify(orders.value))
+        if (index === -1) return
+
+        const original = orders.value[index]
+        const lockFields =
+            original.status === '已完成' || updatedOrder.status === '已完成'
+
+        if (lockFields) {
+            const amountChanged = Number(updatedOrder.amount) !== Number(original.amount)
+            const customerChanged = updatedOrder.customer !== original.customer
+            if (amountChanged || customerChanged) {
+                throw new Error('已完成的订单不允许修改金额和客户信息')
+            }
         }
+
+        orders.value[index] = { ...original, ...updatedOrder }
+        persist()
     }
 
     const deleteOrder = (orderNo) => {
+        // 已删除订单不可恢复
         orders.value = orders.value.filter(o => o.orderNo !== orderNo)
-        localStorage.setItem('orders', JSON.stringify(orders.value))
+        persist()
     }
 
     initOrders()

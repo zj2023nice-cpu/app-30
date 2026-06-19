@@ -45,9 +45,10 @@ router.beforeEach((to, from, next) => {
   // 更新页面标题
   document.title = to.meta.title || '后台订单管理系统'
   
-  // 检查是否需要登录
+  // 检查是否需要登录（同时兼容 localStorage「记住我」与 sessionStorage 会话登录）
   if (to.meta.requiresAuth) {
-    const token = localStorage.getItem('token')
+    const token =
+      localStorage.getItem('token') || sessionStorage.getItem('token')
     if (!token) {
       next({ name: 'Login', query: { redirect: to.fullPath } })
       return

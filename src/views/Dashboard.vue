@@ -177,15 +177,23 @@
 
     <!-- 编辑订单弹窗 -->
     <el-dialog v-model="showEditOrderDialog" title="编辑订单" width="500px">
+      <el-alert
+        v-if="isEditingCompleted"
+        type="warning"
+        :closable="false"
+        show-icon
+        title="已完成状态的订单不允许修改客户名称和订单金额"
+        style="margin-bottom: 16px;"
+      />
       <el-form :model="editOrderForm" label-width="100px">
         <el-form-item label="订单号">
           <el-input v-model="editOrderForm.orderNo" disabled />
         </el-form-item>
         <el-form-item label="客户名称">
-           <el-input v-model="editOrderForm.customer" />
+           <el-input v-model="editOrderForm.customer" :disabled="isEditingCompleted" />
         </el-form-item>
         <el-form-item label="订单金额">
-           <el-input-number v-model="editOrderForm.amount" :min="0" :precision="2" />
+           <el-input-number v-model="editOrderForm.amount" :min="0" :precision="2" :disabled="isEditingCompleted" />
         </el-form-item>
         <el-form-item label="订单状态">
            <el-select v-model="editOrderForm.status">
@@ -334,15 +342,28 @@ const editOrderForm = reactive({
     status: ''
 })
 
+// 编辑前的原始状态：用于判定是否为「已完成」订单
+const editOriginalStatus = ref('')
+// 锁定条件：原始状态或当前选中状态任一为「已完成」时，禁用金额和客户字段
+// 防止用户通过先切换状态来绕过限制，或将非完成订单改成已完成时同时改金额/客户
+const isEditingCompleted = computed(
+    () => editOriginalStatus.value === '已完成' || editOrderForm.status === '已完成'
+)
+
 const openEditDialog = (row) => {
     Object.assign(editOrderForm, row)
+    editOriginalStatus.value = row.status
     showEditOrderDialog.value = true
 }
 
 const confirmEditOrder = () => {
-    orderStore.updateOrder({ ...editOrderForm })
-    ElMessage.success('更新订单成功')
-    showEditOrderDialog.value = false
+    try {
+        orderStore.updateOrder({ ...editOrderForm })
+        ElMessage.success('更新订单成功')
+        showEditOrderDialog.value = false
+    } catch (error) {
+        ElMessage.error(error.message || '更新订单失败')
+    }
 }
 
 // 删除订单
