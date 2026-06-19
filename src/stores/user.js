@@ -35,10 +35,29 @@ const mockUsers = [
   }
 ]
 
+// 统一的鉴权信息读取：优先 localStorage（记住我），回退到 sessionStorage（仅本次会话）
+const readAuth = () => {
+  const token =
+    localStorage.getItem('token') || sessionStorage.getItem('token') || ''
+  const userStr =
+    localStorage.getItem('currentUser') ||
+    sessionStorage.getItem('currentUser') ||
+    ''
+  return { token, userStr }
+}
+
+// 清除两个 storage 中的登录信息，避免残留
+const clearAuthStorage = () => {
+  localStorage.removeItem('token')
+  localStorage.removeItem('currentUser')
+  sessionStorage.removeItem('token')
+  sessionStorage.removeItem('currentUser')
+}
+
 export const useUserStore = defineStore('user', () => {
   // 状态
   const currentUser = ref(null)
-  const token = ref(localStorage.getItem('token') || '')
+  const token = ref('')
   const rememberMe = ref(localStorage.getItem('rememberMe') === 'true')
   const savedUsername = ref(localStorage.getItem('savedUsername') || '')
 
@@ -46,14 +65,13 @@ export const useUserStore = defineStore('user', () => {
   const isLoggedIn = computed(() => !!token.value && !!currentUser.value)
   const userInfo = computed(() => currentUser.value)
 
-  // 初始化：检查是否已登录
+  // 初始化：检查是否已登录（同时兼容 localStorage 与 sessionStorage）
   const initUser = () => {
-    const savedToken = localStorage.getItem('token')
-    const savedUser = localStorage.getItem('currentUser')
-    if (savedToken && savedUser) {
+    const { token: savedToken, userStr } = readAuth()
+    if (savedToken && userStr) {
       token.value = savedToken
       try {
-        currentUser.value = JSON.parse(savedUser)
+        currentUser.value = JSON.parse(userStr)
       } catch (e) {
         logout()
       }
@@ -72,7 +90,7 @@ export const useUserStore = defineStore('user', () => {
     } catch (e) {
         registeredUsers = []
     }
-    
+
     const allUsers = [...mockUsers, ...registeredUsers]
     const user = allUsers.find(u => u.username === username && u.password === password)
 
@@ -82,15 +100,21 @@ export const useUserStore = defineStore('user', () => {
 
     // 生成模拟token
     const newToken = 'token_' + Date.now() + '_' + Math.random().toString(36).substr(2)
-    
-    // 保存登录状态
+
+    // 更新内存中的状态
     token.value = newToken
     currentUser.value = { ...user, password: undefined }
-    
-    localStorage.setItem('token', newToken)
-    localStorage.setItem('currentUser', JSON.stringify(currentUser.value))
 
-    // 处理"记住我"
+    // 持久化策略：
+    // - 勾选「记住我」：写入 localStorage，关闭浏览器后仍保持登录
+    // - 未勾选：仅写入 sessionStorage，浏览器关闭/新开窗口即失效
+    // 写入前先清除两个 storage，避免上次会话的残留干扰
+    clearAuthStorage()
+    const storage = remember ? localStorage : sessionStorage
+    storage.setItem('token', newToken)
+    storage.setItem('currentUser', JSON.stringify(currentUser.value))
+
+    // 「记住我」勾选状态本身始终持久化在 localStorage（用于回填用户名）
     rememberMe.value = remember
     if (remember) {
       localStorage.setItem('rememberMe', 'true')
@@ -152,8 +176,7 @@ export const useUserStore = defineStore('user', () => {
   const logout = () => {
     token.value = ''
     currentUser.value = null
-    localStorage.removeItem('token')
-    localStorage.removeItem('currentUser')
+    clearAuthStorage()
   }
 
   // 发送重置密码邮件（模拟）
