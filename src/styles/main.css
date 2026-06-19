@@ -410,3 +410,56 @@ body {
   color: var(--text-secondary);
   margin-bottom: var(--spacing-lg);
 }
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+
+  .el-dialog {
+    width: 95% !important;
+    margin: 10px auto !important;
+  }
+
+  .el-dialog__body {
+    padding: 16px;
+  }
+
+  .el-table {
+    font-size: 13px;
+  }
+
+  .el-button {
+    padding: 8px 12px;
+  }
+
+  .el-button--large {
+    padding: 12px 20px;
+  }
+}
+
+/* 确保数字输入框在弹窗中宽度正常 */
+.el-input-number {
+  width: 100%;
+}
+
+.el-input-number .el-input__wrapper {
+  width: 100%;
+}
+
+/* 优化表格在小屏幕的显示 */
+@media (max-width: 600px) {
+  .el-table .cell {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
+
+/* 移除默认选中轮廓，优化键盘访问 */
+a:focus-visible,
+button:focus-visible,
+.el-button:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
