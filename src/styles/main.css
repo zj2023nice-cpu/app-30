@@ -1,0 +1,412 @@
+/* ===========================
+   后台订单管理系统 - 全局样式
+   =========================== */
+
+/* CSS 变量定义 */
+:root {
+  /* 主色调 */
+  --primary-color: #409eff;
+  --primary-hover: #66b1ff;
+  --primary-active: #3a8ee6;
+  --success-color: #67c23a;
+  --warning-color: #e6a23c;
+  --danger-color: #f56c6c;
+  --info-color: #909399;
+
+  /* 背景渐变 */
+  --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --bg-gradient-alt: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  
+  /* 卡片样式 */
+  --card-bg: rgba(255, 255, 255, 0.95);
+  --card-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  --card-radius: 16px;
+
+  /* 文字颜色 */
+  --text-primary: #303133;
+  --text-secondary: #606266;
+  --text-placeholder: #c0c4cc;
+  --text-disabled: #a8abb2;
+
+  /* 边框 */
+  --border-color: #dcdfe6;
+  --border-radius: 8px;
+
+  /* 间距 */
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* 动画 */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+}
+
+/* 全局重置 */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  color: var(--text-primary);
+  background: var(--bg-gradient);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+/* 认证页面容器 */
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+  background: var(--bg-gradient);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 背景装饰 */
+.auth-container::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 50%);
+  animation: float 20s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(30px, 30px) rotate(180deg); }
+}
+
+/* 认证卡片 */
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  padding: var(--spacing-xl) var(--spacing-lg);
+  position: relative;
+  z-index: 1;
+  backdrop-filter: blur(10px);
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 卡片头部 */
+.auth-header {
+  text-align: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.auth-logo {
+  width: 64px;
+  height: 64px;
+  margin-bottom: var(--spacing-md);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+}
+
+.auth-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.auth-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+/* 表单样式优化 */
+.auth-form {
+  margin-bottom: var(--spacing-lg);
+}
+
+.auth-form .el-form-item {
+  margin-bottom: var(--spacing-lg);
+}
+
+.auth-form .el-input__wrapper {
+  padding: 12px 16px;
+  border-radius: var(--border-radius);
+  box-shadow: 0 0 0 1px var(--border-color);
+  transition: all var(--transition-fast);
+}
+
+.auth-form .el-input__wrapper:hover {
+  box-shadow: 0 0 0 1px var(--primary-color);
+}
+
+.auth-form .el-input__wrapper.is-focus {
+  box-shadow: 0 0 0 2px var(--primary-color), 0 4px 12px rgba(64, 158, 255, 0.15);
+}
+
+.auth-form .el-input__inner {
+  font-size: 1rem;
+  height: auto;
+}
+
+/* 修复自动填充样式 */
+.auth-form .el-input__inner:-webkit-autofill,
+.auth-form .el-input__inner:-webkit-autofill:hover,
+.auth-form .el-input__inner:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px white inset !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* 复选框样式 */
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.form-options .el-checkbox {
+  height: auto;
+}
+
+.form-options .el-checkbox__label {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.forgot-link {
+  color: var(--primary-color);
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.forgot-link:hover {
+  color: var(--primary-hover);
+  text-decoration: underline;
+}
+
+/* 提交按钮 */
+.submit-btn {
+  width: 100%;
+  height: 48px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--border-radius);
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: none;
+  transition: all var(--transition-normal);
+}
+
+.submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.submit-btn:active {
+  transform: translateY(0);
+}
+
+/* 卡片底部 */
+.auth-footer {
+  text-align: center;
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--border-color);
+}
+
+.auth-footer p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.auth-footer a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+  margin-left: 4px;
+  transition: color var(--transition-fast);
+}
+
+.auth-footer a:hover {
+  color: var(--primary-hover);
+  text-decoration: underline;
+}
+
+/* 密码强度指示器 */
+.password-strength {
+  margin-top: 8px;
+  display: flex;
+  gap: 4px;
+}
+
+.password-strength .strength-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--border-color);
+  border-radius: 2px;
+  transition: background var(--transition-fast);
+}
+
+.password-strength.weak .strength-bar:nth-child(1) {
+  background: var(--danger-color);
+}
+
+.password-strength.medium .strength-bar:nth-child(1),
+.password-strength.medium .strength-bar:nth-child(2) {
+  background: var(--warning-color);
+}
+
+.password-strength.strong .strength-bar {
+  background: var(--success-color);
+}
+
+.strength-text {
+  font-size: 0.75rem;
+  margin-top: 4px;
+  color: var(--text-secondary);
+}
+
+/* 响应式设计 */
+@media (max-width: 480px) {
+  .auth-container {
+    padding: var(--spacing-md);
+  }
+
+  .auth-card {
+    padding: var(--spacing-lg) var(--spacing-md);
+    border-radius: 12px;
+  }
+
+  .auth-title {
+    font-size: 1.5rem;
+  }
+
+  .auth-logo {
+    width: 56px;
+    height: 56px;
+  }
+
+  .form-options {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    align-items: flex-start;
+  }
+}
+
+/* Element Plus 覆盖 */
+.el-message {
+  border-radius: 8px !important;
+}
+
+.el-message-box {
+  border-radius: 12px !important;
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* 加载动画 */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+/* 返回链接 */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  text-decoration: none;
+  margin-bottom: var(--spacing-lg);
+  transition: color var(--transition-fast);
+}
+
+.back-link:hover {
+  color: var(--primary-color);
+}
+
+/* 成功提示样式 */
+.success-container {
+  text-align: center;
+  padding: var(--spacing-xl) 0;
+}
+
+.success-icon {
+  font-size: 64px;
+  color: var(--success-color);
+  margin-bottom: var(--spacing-lg);
+}
+
+.success-title {
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-md);
+}
+
+.success-desc {
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-lg);
+}
