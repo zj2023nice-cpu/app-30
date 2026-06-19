@@ -1,179 +1,228 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
-// 模拟用户数据库
-const mockUsers = [
+const STORAGE_KEYS = {
+  USERS: 'oms_registeredUsers',
+  TOKEN_LOCAL: 'oms_token',
+  USER_LOCAL: 'oms_currentUser',
+  TOKEN_SESSION: 'oms_token_session',
+  USER_SESSION: 'oms_currentUser_session',
+  REMEMBER_ME: 'oms_rememberMe',
+  SAVED_USERNAME: 'oms_savedUsername',
+  RESET_TOKENS: 'oms_resetTokens'
+}
+
+const defaultUsers = [
   {
     id: 1,
     username: 'admin',
     password: '123456',
-    email: 'admin@example.com',
+    email: 'a****@***********',
     nickname: '系统管理员',
     avatar: '',
     role: 'admin',
     createdAt: '2024-01-01'
-  },
-  {
-    id: 2,
-    username: 'zhangsan',
-    password: 'user123',
-    email: 'zhangsan@example.com',
-    nickname: '张三',
-    avatar: '',
-    role: 'user',
-    createdAt: '2024-01-05'
-  },
-  {
-    id: 3,
-    username: 'lisi',
-    password: 'user123',
-    email: 'lisi@example.com',
-    nickname: '李四',
-    avatar: '',
-    role: 'user',
-    createdAt: '2024-01-10'
   }
 ]
 
 export const useUserStore = defineStore('user', () => {
-  // 状态
   const currentUser = ref(null)
-  const token = ref(localStorage.getItem('token') || '')
-  const rememberMe = ref(localStorage.getItem('rememberMe') === 'true')
-  const savedUsername = ref(localStorage.getItem('savedUsername') || '')
+  const token = ref('')
+  const rememberMe = ref(localStorage.getItem(STORAGE_KEYS.REMEMBER_ME) === 'true')
+  const savedUsername = ref(localStorage.getItem(STORAGE_KEYS.SAVED_USERNAME) || '')
 
-  // 计算属性
   const isLoggedIn = computed(() => !!token.value && !!currentUser.value)
   const userInfo = computed(() => currentUser.value)
 
-  // 初始化：检查是否已登录
+  const getAllUsers = () => {
+    let registeredUsers = []
+    try {
+      registeredUsers = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]')
+    } catch (e) {
+      registeredUsers = []
+    }
+    return [...defaultUsers, ...registeredUsers]
+  }
+
+  const saveRegisteredUsers = (users) => {
+    const customUsers = users.filter(u => u.id !== 1)
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(customUsers))
+  }
+
+  const getStoredAuth = () => {
+    const localToken = localStorage.getItem(STORAGE_KEYS.TOKEN_LOCAL)
+    const localUser = localStorage.getItem(STORAGE_KEYS.USER_LOCAL)
+    if (localToken && localUser) {
+      return { token: localToken, user: localUser, fromLocal: true }
+    }
+    const sessionToken = sessionStorage.getItem(STORAGE_KEYS.TOKEN_SESSION)
+    const sessionUser = sessionStorage.getItem(STORAGE_KEYS.USER_SESSION)
+    if (sessionToken && sessionUser) {
+      return { token: sessionToken, user: sessionUser, fromLocal: false }
+    }
+    return null
+  }
+
+  const clearStoredAuth = () => {
+    localStorage.removeItem(STORAGE_KEYS.TOKEN_LOCAL)
+    localStorage.removeItem(STORAGE_KEYS.USER_LOCAL)
+    sessionStorage.removeItem(STORAGE_KEYS.TOKEN_SESSION)
+    sessionStorage.removeItem(STORAGE_KEYS.USER_SESSION)
+  }
+
   const initUser = () => {
-    const savedToken = localStorage.getItem('token')
-    const savedUser = localStorage.getItem('currentUser')
-    if (savedToken && savedUser) {
-      token.value = savedToken
+    const stored = getStoredAuth()
+    if (stored) {
+      token.value = stored.token
       try {
-        currentUser.value = JSON.parse(savedUser)
+        currentUser.value = JSON.parse(stored.user)
       } catch (e) {
         logout()
       }
     }
   }
 
-  // 登录
   const login = async (username, password, remember = false) => {
-    // 模拟API延迟
-    await new Promise(resolve => setTimeout(resolve, 800))
+    await new Promise(resolve => setTimeout(resolve, 600))
 
-    // 查找用户（包括新注册的用户）
-    let registeredUsers = []
-    try {
-        registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]')
-    } catch (e) {
-        registeredUsers = []
-    }
-    
-    const allUsers = [...mockUsers, ...registeredUsers]
+    const allUsers = getAllUsers()
     const user = allUsers.find(u => u.username === username && u.password === password)
 
     if (!user) {
       throw new Error('用户名或密码错误')
     }
 
-    // 生成模拟token
-    const newToken = 'token_' + Date.now() + '_' + Math.random().toString(36).substr(2)
+    const newToken = 'token_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
     
-    // 保存登录状态
     token.value = newToken
     currentUser.value = { ...user, password: undefined }
     
-    localStorage.setItem('token', newToken)
-    localStorage.setItem('currentUser', JSON.stringify(currentUser.value))
-
-    // 处理"记住我"
+    clearStoredAuth()
+    
     rememberMe.value = remember
     if (remember) {
-      localStorage.setItem('rememberMe', 'true')
-      localStorage.setItem('savedUsername', username)
+      localStorage.setItem(STORAGE_KEYS.TOKEN_LOCAL, newToken)
+      localStorage.setItem(STORAGE_KEYS.USER_LOCAL, JSON.stringify(currentUser.value))
+      localStorage.setItem(STORAGE_KEYS.REMEMBER_ME, 'true')
+      localStorage.setItem(STORAGE_KEYS.SAVED_USERNAME, username)
       savedUsername.value = username
     } else {
-      localStorage.removeItem('rememberMe')
-      localStorage.removeItem('savedUsername')
+      sessionStorage.setItem(STORAGE_KEYS.TOKEN_SESSION, newToken)
+      sessionStorage.setItem(STORAGE_KEYS.USER_SESSION, JSON.stringify(currentUser.value))
+      localStorage.removeItem(STORAGE_KEYS.REMEMBER_ME)
+      localStorage.removeItem(STORAGE_KEYS.SAVED_USERNAME)
       savedUsername.value = ''
     }
 
     return currentUser.value
   }
 
-  // 注册
   const register = async (userData) => {
-    // 模拟API延迟
-    await new Promise(resolve => setTimeout(resolve, 800))
+    await new Promise(resolve => setTimeout(resolve, 600))
 
-    // 获取已注册用户
-    let registeredUsers = []
-    try {
-        registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]')
-    } catch (e) {
-        registeredUsers = []
-    }
-    const allUsers = [...mockUsers, ...registeredUsers]
+    const allUsers = getAllUsers()
 
-    // 检查用户名是否已存在
     if (allUsers.some(u => u.username === userData.username)) {
       throw new Error('用户名已存在')
     }
 
-    // 检查邮箱是否已存在（如果提供了邮箱）
     if (userData.email && allUsers.some(u => u.email === userData.email)) {
       throw new Error('邮箱已被注册')
     }
 
-    // 创建新用户
     const newUser = {
       id: Date.now(),
       username: userData.username,
       password: userData.password,
       email: userData.email || '',
-      nickname: userData.username,
+      nickname: userData.nickname || userData.username,
       avatar: '',
       role: 'user',
       createdAt: new Date().toISOString().split('T')[0]
     }
 
-    // 保存新用户
-    registeredUsers.push(newUser)
-    localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers))
+    const customUsers = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]')
+    customUsers.push(newUser)
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(customUsers))
 
     return { ...newUser, password: undefined }
   }
 
-  // 登出
   const logout = () => {
     token.value = ''
     currentUser.value = null
-    localStorage.removeItem('token')
-    localStorage.removeItem('currentUser')
+    clearStoredAuth()
   }
 
-  // 发送重置密码邮件（模拟）
-  const sendResetPasswordEmail = async (email) => {
-    // 模拟API延迟
-    await new Promise(resolve => setTimeout(resolve, 1000))
+  const generateResetToken = async (email) => {
+    await new Promise(resolve => setTimeout(resolve, 800))
 
-    const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]')
-    const allUsers = [...mockUsers, ...registeredUsers]
+    const allUsers = getAllUsers()
     const user = allUsers.find(u => u.email === email)
 
     if (!user) {
       throw new Error('该邮箱未注册')
     }
 
-    // 模拟发送邮件成功
+    const resetToken = 'reset_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+    
+    let resetTokens = {}
+    try {
+      resetTokens = JSON.parse(localStorage.getItem(STORAGE_KEYS.RESET_TOKENS) || '{}')
+    } catch (e) {
+      resetTokens = {}
+    }
+    
+    resetTokens[resetToken] = {
+      userId: user.id,
+      email: email,
+      expires: Date.now() + 30 * 60 * 1000
+    }
+    localStorage.setItem(STORAGE_KEYS.RESET_TOKENS, JSON.stringify(resetTokens))
+
+    return { resetToken, email }
+  }
+
+  const validateResetToken = (token) => {
+    try {
+      const resetTokens = JSON.parse(localStorage.getItem(STORAGE_KEYS.RESET_TOKENS) || '{}')
+      const tokenData = resetTokens[token]
+      if (!tokenData) return { valid: false, message: '重置链接无效或已过期' }
+      if (Date.now() > tokenData.expires) {
+        delete resetTokens[token]
+        localStorage.setItem(STORAGE_KEYS.RESET_TOKENS, JSON.stringify(resetTokens))
+        return { valid: false, message: '重置链接已过期，请重新申请' }
+      }
+      return { valid: true, userId: tokenData.userId, email: tokenData.email }
+    } catch (e) {
+      return { valid: false, message: '重置链接无效' }
+    }
+  }
+
+  const resetPassword = async (token, newPassword) => {
+    await new Promise(resolve => setTimeout(resolve, 600))
+
+    const validation = validateResetToken(token)
+    if (!validation.valid) {
+      throw new Error(validation.message)
+    }
+
+    const allUsers = getAllUsers()
+    const userIndex = allUsers.findIndex(u => u.id === validation.userId)
+    if (userIndex === -1) {
+      throw new Error('用户不存在')
+    }
+
+    allUsers[userIndex].password = newPassword
+    saveRegisteredUsers(allUsers)
+
+    const resetTokens = JSON.parse(localStorage.getItem(STORAGE_KEYS.RESET_TOKENS) || '{}')
+    delete resetTokens[token]
+    localStorage.setItem(STORAGE_KEYS.RESET_TOKENS, JSON.stringify(resetTokens))
+
     return true
   }
 
-  // 初始化
   initUser()
 
   return {
@@ -186,6 +235,8 @@ export const useUserStore = defineStore('user', () => {
     login,
     register,
     logout,
-    sendResetPasswordEmail
+    generateResetToken,
+    validateResetToken,
+    resetPassword
   }
 })
