@@ -1,37 +1,51 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 
 const routes = [
   {
     path: '/',
-    redirect: '/login'
+    redirect: '/dashboard'
   },
   {
     path: '/login',
     name: 'Login',
     component: () => import('@/views/Login.vue'),
-    meta: { title: '登录 - 后台订单管理系统' }
+    meta: { title: '登录 - 订单管理系统', requiresGuest: true }
   },
   {
     path: '/register',
     name: 'Register',
     component: () => import('@/views/Register.vue'),
-    meta: { title: '注册 - 后台订单管理系统' }
+    meta: { title: '注册 - 订单管理系统', requiresGuest: true }
   },
   {
     path: '/forgot-password',
     name: 'ForgotPassword',
     component: () => import('@/views/ForgotPassword.vue'),
-    meta: { title: '忘记密码 - 后台订单管理系统' }
+    meta: { title: '重置密码 - 订单管理系统', requiresGuest: true }
   },
   {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: () => import('@/views/Dashboard.vue'),
-    meta: { title: '控制台 - 后台订单管理系统', requiresAuth: true }
+    path: '/',
+    component: () => import('@/views/Layout.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: 'dashboard',
+        name: 'Dashboard',
+        component: () => import('@/views/Dashboard.vue'),
+        meta: { title: '仪表盘 - 订单管理系统' }
+      },
+      {
+        path: 'orders',
+        name: 'Orders',
+        component: () => import('@/views/Orders.vue'),
+        meta: { title: '订单管理 - 订单管理系统' }
+      }
+    ]
   },
   {
     path: '/:pathMatch(.*)*',
-    redirect: '/login'
+    redirect: '/dashboard'
   }
 ]
 
@@ -40,20 +54,22 @@ const router = createRouter({
   routes
 })
 
-// 路由守卫
 router.beforeEach((to, from, next) => {
-  // 更新页面标题
-  document.title = to.meta.title || '后台订单管理系统'
-  
-  // 检查是否需要登录
-  if (to.meta.requiresAuth) {
-    const token = localStorage.getItem('token')
-    if (!token) {
-      next({ name: 'Login', query: { redirect: to.fullPath } })
-      return
-    }
+  document.title = to.meta.title || '订单管理系统'
+
+  const userStore = useUserStore()
+  const isLoggedIn = userStore.isLoggedIn
+
+  if (to.meta.requiresAuth && !isLoggedIn) {
+    next({ name: 'Login', query: { redirect: to.fullPath } })
+    return
   }
-  
+
+  if (to.meta.requiresGuest && isLoggedIn) {
+    next({ name: 'Dashboard' })
+    return
+  }
+
   next()
 })
 

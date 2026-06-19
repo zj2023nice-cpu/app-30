@@ -38,6 +38,15 @@ export const getStorage = (key, defaultValue = null) => {
 }
 
 /**
+ * 检查存储项是否存在（即使值为 null/空数组/空对象也返回 true）
+ * @param {string} key - 键名
+ * @returns {boolean}
+ */
+export const hasStorage = (key) => {
+  return localStorage.getItem(STORAGE_PREFIX + key) !== null
+}
+
+/**
  * 移除存储项
  * @param {string} key - 键名
  */
